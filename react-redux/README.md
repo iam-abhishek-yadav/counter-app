@@ -1,30 +1,144 @@
-# React + TypeScript + Vite
+- **Redux Store**
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+  ```ts
+  import { configureStore } from '@reduxjs/toolkit';
+  import counterReducer from './counter/counterSlice';
 
-Currently, two official plugins are available:
+  export const store = configureStore({
+  	reducer: {
+  		counter: counterReducer,
+  	},
+  });
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+  export type RootState = ReturnType<typeof store.getState>;
+  export type AppDispatch = typeof store.dispatch;
+  ```
 
-## Expanding the ESLint configuration
+  - **Purpose**:
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+    - Manages the application's state in a single object.
+    - Provides a centralized location to access and update the application state.
 
-- Configure the top-level `parserOptions` property like this:
+  - **Key Points**:
+    - **`Single Source of Truth`**: Redux store holds the entire state tree of the application.
+    - **`Access State`**: You can access the current state using `store.getState()`.
+    - **`Update State`**: State changes are made by dispatching actions to the store.
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
-```
+- **Redux Slice**
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+  ```ts
+  import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+
+  const initialState = { value: 0 };
+
+  const counterSlice = createSlice({
+  	name: 'counter',
+  	initialState,
+  	reducers: {
+  		reset: (state) => {
+  			state.value = 0;
+  		},
+  		incrementByAmount: (state, action: PayloadAction<number>) => {
+  			state.value += action.payload;
+  		},
+  	},
+  	extraReducers: (builder) => {
+  		builder
+  			.addCase(incrementAsync.pending, (state) => {
+  				console.log('incrementAsync.pending');
+  			})
+  			.addCase(
+  				incrementAsync.fulfilled,
+  				(state, action: PayloadAction<number>) => {
+  					state.value += action.payload;
+  				}
+  			);
+  	},
+  });
+
+  export const { reset, incrementByAmount } = counterSlice.actions;
+  export default counterSlice.reducer;
+  ```
+
+  - **Purpose**:
+
+    - Defines a part (or slice) of the application's state and its related logic.
+    - Helps in organizing reducers and actions that operate on a specific portion of the state.
+
+  - **Key Points**:
+    - **`Reducer and Actions`**: A slice includes both reducers (functions that specify how the state changes) and action creators (functions that create actions).
+    - **`Modular State Management`**: Encapsulates state and behavior related to a particular feature or domain.
+
+- **Actions**
+
+  ```ts
+  export const incrementCounter = () => ({
+  	type: 'INCREMENT_COUNTER',
+  });
+
+  export const decrementCounter = () => ({
+  	type: 'DECREMENT_COUNTER',
+  });
+  ```
+
+  - **Purpose**:
+
+    - Describes the intention to change the state.
+    - Represents the payload of information that sends data from the application to the Redux store.
+
+  - **Key Points**:
+    - **`Plain JavaScript Objects`**: Actions are plain objects with a `type` field that indicates the type of action.
+    - **`Dispatching Actions`**: Actions are dispatched using `store.dispatch(action)`.
+    - **`Handled by Reducers`**: Reducers specify how the state should change in response to actions.
+
+- **Reducers**
+
+  ```ts
+  const counterReducer = (state = 0, action) => {
+  	switch (action.type) {
+  		case 'INCREMENT_COUNTER':
+  			return state + 1;
+  		case 'DECREMENT_COUNTER':
+  			return state - 1;
+  		default:
+  			return state;
+  	}
+  };
+
+  export default counterReducer;
+  ```
+
+  - **Purpose**:
+
+    - Specify how the application's state changes in response to actions sent to the store.
+    - Are pure functions that take the previous state and an action, and return the next state.
+
+  - **Key Points**:
+    - **`Pure Functions`**: Reducers should not mutate the state directly; instead, they return a new state object.
+    - **`Single Responsibility`**: Each reducer manages a specific slice of the application's state tree.
+    - **`Combined with combineReducers`**: Multiple reducers are combined into a single root reducer using `combineReducers`.
+
+- **Async Thunks (Optional)**
+
+  ```ts
+  import { createAsyncThunk } from '@reduxjs/toolkit';
+
+  export const incrementAsync = createAsyncThunk<number, number>(
+  	'counter/incrementAsync',
+
+  	async (amount: number) => {
+  		await new Promise((resolve) => setTimeout(resolve, 1000));
+  		return amount;
+  	}
+  );
+  ```
+
+  - **Purpose**:
+
+    - Handles asynchronous logic, like fetching data from an API, inside Redux actions.
+    - Ensures that Redux actions can be dispatched asynchronously.
+
+  - **Key Points**:
+    - **`createAsyncThunk`**: Helper function from Redux Toolkit to define async actions that dispatch multiple lifecycle actions: `pending`, `fulfilled`, and `rejected`.
+    - **`Middleware`**: Asynchronous operations often use middleware like `redux-thunk` or are directly handled by Redux Toolkit's `createAsyncThunk`.
+    - **`Error Handling`**: Provides built-in error handling for asynchronous operations.

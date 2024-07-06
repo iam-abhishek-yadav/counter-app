@@ -2,7 +2,7 @@ import Counter from './components/Counter';
 
 const App = () => {
 	return (
-		<div className='min-h-screen bg-gray-400 flex items-center justify-center'>
+		<div className='min-h-screen bg-gray-900 flex items-center justify-center'>
 			<Counter />
 		</div>
 	);
